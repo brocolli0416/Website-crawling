@@ -1,0 +1,54 @@
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
+from twisted.internet import task, reactor
+import lxml
+import slackweb
+
+# This is a web scraper that checks for job updates on Conyac.ca every 10 minutes and sends slack notification when a "light" job has been posted.
+
+timeout = 600.0 # Sets the timeframe for running the program in seconds (=10 minutes)
+
+# Login info
+url = "INSERT LOG IN URL"
+login = "INSERT USER NAME"
+passwrd = "INSERT PASSWORD"
+
+options = Options()
+#options.add_argument("--headless") # This keeps the website from popping up everytime the program runs. Comment if you want to see what's going on on the website while the program runs.
+
+
+def scrape_light():
+    driver = webdriver.Chrome(executable_path="C:/Users/wangs/Desktop/chromedriver_win32/chromedriver.exe", options=options)
+    # Chrome driver opens websites on Chrome. Chromedriver has been downloaded to Desktop.
+
+    driver.get(url)
+
+    driver.find_element_by_id("login").send_keys(login)
+    driver.find_element_by_id("password").send_keys(passwrd)
+    driver.find_element_by_name("commit").send_keys(Keys.ENTER) # "commit" is the name associated with the "Submit" button
+
+    driver.get("https://conyac.cc/ja/questions") # Navigates to the page that lists all the light jobs.
+    driver.get("https://conyac.cc/ja/projects/questions") # Navigates to the page that lists all the standard jobs.
+    souptwo = BeautifulSoup(driver.page_source, "lxml")
+    mytwo = souptwo.findAll("div", {"class":"content style"})
+
+    soup = BeautifulSoup(driver.page_source, "lxml")
+    my = soup.findAll("div", {"class": "alert"}) # An alert message "現在Light依頼はありません" will show up when there is NO job posted
+
+    if my == []: # [] means that the alert message is no longer there. ie. There is a job posting
+        # Sends a slack message to myself with the following text
+        slack = slackweb.Slack(url="https://hooks.slack.com/services/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")
+        slack.notify(text="A new light job request has been posted!")
+    else:
+        print(my)
+
+
+
+l = task.LoopingCall(scrape)
+l.start(timeout)
+
+reactor.run()
+
