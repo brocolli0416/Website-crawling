@@ -40,7 +40,7 @@ def scrape_light():
 
     if my == []: # [] means that the alert message is no longer there. ie. There is a job posting
         # Sends a slack message to myself with the following text
-        slack = slackweb.Slack(url="https://hooks.slack.com/services/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")
+        slack = slackweb.Slack(url="INSERT SLACK URL")
         slack.notify(text="A new light job request has been posted!")
     else:
         print(my)
